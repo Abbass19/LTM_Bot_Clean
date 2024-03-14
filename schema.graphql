@@ -1,0 +1,33 @@
+schema {
+    query: Query
+}
+
+type Query {
+    fitLTMBot(
+      X_train: [[Float]]!
+      y_train: [[Float]]!
+      timesteps: Int!
+      apply_hyperparameter_tuning: Boolean!
+      model_case_version_main_target_code: Int!
+      iteration: Int!
+      model_name: String!
+    ): fitLTMBotResult!
+
+    predictLTMBot(
+      X_test: [[Float]]!
+      timesteps: Int!
+      model_path: String!
+    ):predictLTMBotResults
+}
+
+type fitLTMBotResult {
+    success: Boolean!,
+    error: String,
+    model_path: String
+}
+
+type predictLTMBotResults {
+    success: Boolean!,
+    error: String,
+    predictions: [[Float]]
+}
