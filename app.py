@@ -2,13 +2,12 @@ from ariadne import graphql_sync, make_executable_schema, gql, load_schema_from_
 from flask import request,jsonify,Flask
 
 from api import settings
-from api.queries import resolve_fitLTMBot, resolve_predictLTMBot
+from api.queries import resolve_fitLongShortTermMemory, resolve_consumeLongShortTermMemory
 
 app = Flask(__name__)
-
 query = ObjectType("Query")
-query.set_field("fitLTMBot", resolve_fitLTMBot)
-query.set_field("predictLTMBot", resolve_predictLTMBot)
+query.set_field("fitLongShortTermMemory", resolve_fitLongShortTermMemory)
+query.set_field("consumeLongShortTermMemory", resolve_consumeLongShortTermMemory)
 
 type_defs = load_schema_from_path(settings.GRAPHQL_SCHEMA)
 schema = make_executable_schema(

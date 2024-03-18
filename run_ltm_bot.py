@@ -2,6 +2,7 @@ import requests
 import pandas as pd
 from datetime import datetime
 import json
+import sys
 
 import pandas as pd
 import psycopg2
@@ -102,13 +103,13 @@ bot_config = {
     'model_case_version_main_target_code': model_case_version_main_target_code,
     'iteration': iteration,
     'model_name': 'MPN5P_LTM_3_timesteps',
-    'endpoint': 'http://localhost:8000/graphql'
+    'endpoint': 'http://0.0.0.0:4000/graphql'
 }
 
 def fit_LTM_Bot(bot_config):
     query = f"""
         query {{
-            fitLTMBot(
+            fitLongShortTermMemory(
                 X_train: {bot_config['X_train']}
                 y_train: {bot_config['y_train']}
                 timesteps: {bot_config['timesteps']}
@@ -169,6 +170,7 @@ if __name__ == '__main__':
     model_case_version_main_target_code = '5'
 
     fit_response=fit_LTM_Bot(bot_config)
+    sys.exit()
     if not fit_response['data']['fitLTMBot']['success']:
         print(fit_response['data']['fitLTMBot']['error'])
         print(fit_response['data']['fitLTMBot'])

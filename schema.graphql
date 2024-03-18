@@ -3,30 +3,37 @@ schema {
 }
 
 type Query {
-    fitLTMBot(
-      X_train: [[Float]]!
-      y_train: [[Float]]!
+    fitLongShortTermMemory(
+      X_train: [[[Float]]]!
+      y_train: [Float]!
+      X_test: [[[Float]]]
+      y_test: [Float]
+      predict: Boolean!
       timesteps: Int!
       apply_hyperparameter_tuning: Boolean!
       model_case_version_main_target_code: Int!
       iteration: Int!
       model_name: String!
-    ): fitLTMBotResult!
+      learning_rate: Float
+      batch_size: Int
+      n_epochs: Int
+      attenuated_padding_value: Int
+    ): fitLongShortTermMemoryResult!
 
-    predictLTMBot(
+    consumeLongShortTermMemory(
       X_test: [[Float]]!
       timesteps: Int!
       model_path: String!
-    ):predictLTMBotResults
+    ):consumeLongShortTermMemoryResult
 }
 
-type fitLTMBotResult {
+type fitLongShortTermMemoryResult {
     success: Boolean!,
     error: String,
     model_path: String
 }
 
-type predictLTMBotResults {
+type consumeLongShortTermMemoryResult {
     success: Boolean!,
     error: String,
     predictions: [[Float]]

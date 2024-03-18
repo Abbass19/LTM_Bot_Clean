@@ -1,59 +1,89 @@
+import pandas as pd
 import numpy as np
+import json
+import sys
+
+from scipy.stats import linregress
+from joblib import dump, load
 from keras.models import load_model
+from keras.optimizers import Adam
 
 from api import settings
-from api.model import building_data_sequences, building_test_data_sequences
-from api.model import fitLTMBot
+from api.utils import *
 
-def resolve_fitLTMBot(obj, info, X_train, y_train, timesteps, apply_hyperparameter_tuning, model_case_version_main_target_code, iteration, model_name):
+
+def resolve_fitLongShortTermMemory(
+    obj,
+    info,
+    X_train,
+    y_train,
+    predict,
+    timesteps,
+    apply_hyperparameter_tuning,
+    model_case_version_main_target_code,
+    iteration,
+    model_name,
+    learning_rate=0.0005,
+    batch_size=64,
+    n_epochs=100,
+    attenuated_padding_value=1,
+    X_test=None,
+    y_test=None,
+):
     try:
         X_train = np.array(X_train)
         y_train = np.array(y_train)
-        X_train_seq, y_train_seq = building_data_sequences(X_train, y_train, timesteps=timesteps)
-        print('\n')
-        print('X_train: ',X_train_seq[:10], '\n')
-        print('y_train: ',y_train_seq[:10], '\n')
+        if X_test is not None:
+            X_test = np.array(X_test)
+            y_test = np.array(y_test)
 
-        model = fitLTMBot(X_train_seq, y_train_seq, apply_hyperparameter_tuning, model_case_version_main_target_code, iteration)
+        print(X_train.shape)
+        print(y_train.shape)
+        # define the input parameters
+        input_shape = ((X_train).shape[1], (X_train).shape[2])
+        optimizer = Adam(learning_rate=learning_rate)
+        # return the model
+        model = compile_model(
+            input_shape,
+            iteration,
+            model_case_version_main_target_code,
+            optimizer,
+            attenuated_padding_value,
+        )
+        print("Input shape: \n", X_train.shape)
+        print("\n")
+        print("Model summary: \n", model.summary())
+        #fit with test data if provided
+        if X_test is not None:
+            history = model.fit(
+                X_train, y_train, batch_size=batch_size, epochs=n_epochs, verbose=2, validation_data = (X_test,y_test)
+            )
+        else:
+            history = model.fit(
+                X_train, y_train, batch_size=batch_size, epochs=n_epochs, verbose=2
+            )
+        # run the train predictions if predict true
+        if predict:
+            train_predictions = model.predict(X_train)
+            print('train_predictions', train_predictions.tolist()[:10])
+        # run the test predictions if provided if predict true
+        if X_test is not None:
+            test_predictions = model.predict(X_test)
+            print('test_predictions', test_predictions.tolist()[:10])
+
+        model_path = settings.MODELS / 'lstm_model.h5'
+        #save trained model
+        model.save(model_path)
         
-        model.save(str(settings.MODELS / model_name) + '.h5')
-        model.save_weights(str(settings.MODELS / model_name) + '_weights.h5')
-        print('Model saved to: \n')
-        print(str(settings.MODELS / model_name) + '.h5')
     except Exception as error:
-        print('Error: ', error)
-        response = {
-            'success':False,
-            'error':error,
+        return {
+            "success": False,
+            "error": error,
         }
-        return response
-    
-    response = {
-        'success':True,
-        'error':None,
-        'model_path': str(settings.MODELS / model_name) + '.h5'
-    }
+
+    response = {"success": True, "error": None, "model_path": json.dumps(str(model_path))}
     return response
 
-def resolve_predictLTMBot(obj,info, X_test, timesteps, model_path):
-    X_test = np.array(X_test)
-    X_test_seq = building_test_data_sequences(X_test, timesteps)
-    try:
-        model = load_model(model_path)
-        predictions = model.predict(X_test_seq)
-        print('Predictions: \n')
-        print(predictions)
-    except Exception as error:
-        print('Error: ', error)
-        response = {
-            'success':False,
-            'error':error,
-        }
-        return response
 
-    response = {
-        'success':True,
-        'error':None,
-        'predictions': predictions
-    }
-    return response
+def resolve_consumeLongShortTermMemory(obj, info):
+    pass
