@@ -30,6 +30,8 @@ type Query {
 type fitLongShortTermMemoryResult {
     success: Boolean!,
     error: String,
+    train_predictions: [Float!]!,
+    test_predictions: [Float],
     model_path: String
 }
 

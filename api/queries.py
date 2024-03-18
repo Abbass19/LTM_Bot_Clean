@@ -28,7 +28,7 @@ def resolve_fitLongShortTermMemory(
     n_epochs=100,
     attenuated_padding_value=1,
     X_test=None,
-    y_test=None,
+    y_test=None
 ):
     try:
         X_train = np.array(X_train)
@@ -36,9 +36,6 @@ def resolve_fitLongShortTermMemory(
         if X_test is not None:
             X_test = np.array(X_test)
             y_test = np.array(y_test)
-
-        print(X_train.shape)
-        print(y_train.shape)
         # define the input parameters
         input_shape = ((X_train).shape[1], (X_train).shape[2])
         optimizer = Adam(learning_rate=learning_rate)
@@ -64,24 +61,29 @@ def resolve_fitLongShortTermMemory(
             )
         # run the train predictions if predict true
         if predict:
-            train_predictions = model.predict(X_train)
-            print('train_predictions', train_predictions.tolist()[:10])
-        # run the test predictions if provided if predict true
-        if X_test is not None:
-            test_predictions = model.predict(X_test)
-            print('test_predictions', test_predictions.tolist()[:10])
-
-        model_path = settings.MODELS / 'lstm_model.h5'
+            train_predictions = model.predict(X_train).flatten().tolist()
+            print('train_predictions', train_predictions[:10])
+            # run the test predictions if provided if predict true
+            if X_test is not None:
+                test_predictions = model.predict(X_test).flatten().tolist()
+                print('test_predictions', test_predictions[:10])
+            else:
+                test_predictions = None
+        model_path = settings.MODELS / model_name
         #save trained model
         model.save(model_path)
-        
+
     except Exception as error:
         return {
             "success": False,
-            "error": error,
+            "error": error
         }
 
-    response = {"success": True, "error": None, "model_path": json.dumps(str(model_path))}
+    response = {"success": True,
+                 "error": None, 
+                 "model_path": json.dumps(str(model_path)),
+                "train_predictions": train_predictions,
+                "test_predictions": test_predictions}
     return response
 
 
