@@ -2,12 +2,14 @@ schema {
     query: Query
 }
 
+scalar JSON
+
 type Query {
     fitLongShortTermMemory(
-      X_train: [[[Float]]]!
-      y_train: [Float]!
-      X_test: [[[Float]]]
-      y_test: [Float]
+      X_train: JSON!
+      y_train: JSON!
+      X_test: JSON!
+      y_test: JSON!
       predict: Boolean!
       timesteps: Int!
       apply_hyperparameter_tuning: Boolean!
@@ -30,7 +32,7 @@ type Query {
 type fitLongShortTermMemoryResult {
     success: Boolean!,
     error: String,
-    train_predictions: [Float!]!,
+    train_predictions: [Float],
     test_predictions: [Float],
     model_path: String
 }

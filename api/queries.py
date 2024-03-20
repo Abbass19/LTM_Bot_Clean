@@ -31,11 +31,30 @@ def resolve_fitLongShortTermMemory(
     y_test=None
 ):
     try:
-        X_train = np.array(X_train)
-        y_train = np.array(y_train)
-        if X_test is not None:
-            X_test = np.array(X_test)
-            y_test = np.array(y_test)
+        # convert json data to dataframe
+        X_train = pd.DataFrame(json.loads(X_train))
+        y_train = pd.DataFrame(json.loads(y_train))
+        if X_test and y_test is not None:
+             X_test = pd.DataFrame(json.loads(X_test))
+             y_test = pd.DataFrame(json.loads(y_test))
+        else:
+            X_test = pd.DataFrame()
+            y_test = pd.DataFrame()
+
+        # FTP implementation
+        # concat train and test sets
+        train = pd.concat([X_train, y_train], axis=1)
+        if not (X_test.empty and y_test.empty):
+            test = pd.concat([X_test, y_test], axis=1)
+        #call the FTP bot
+        sys.exit()
+        # create sequental data
+        X_train, y_train = building_data_sequences(X_train, y_train, timesteps)
+        X_test, y_test = building_data_sequences(X_test, y_test, timesteps)
+        print('X_train shape: ', X_train.shape)
+        print('y_train shape: ', y_train[0].shape)
+        print('X_test shape: ', X_test.shape)
+        print('y_test shape: ', y_test[0].shape)
         # define the input parameters
         input_shape = ((X_train).shape[1], (X_train).shape[2])
         optimizer = Adam(learning_rate=learning_rate)
