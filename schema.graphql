@@ -6,10 +6,8 @@ scalar JSON
 
 type Query {
     fitLongShortTermMemory(
-      X_train: JSON!
-      y_train: JSON!
-      X_test: JSON
-      y_test: JSON
+      train: JSON!
+      test: JSON
       predict: Boolean!
       timesteps: Int!
       apply_hyperparameter_tuning: Boolean!

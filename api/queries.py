@@ -17,8 +17,7 @@ pd.options.display.max_columns = None
 def resolve_fitLongShortTermMemory(
     obj,
     info,
-    X_train,
-    y_train,
+    train,
     predict,
     timesteps,
     apply_hyperparameter_tuning,
@@ -31,28 +30,21 @@ def resolve_fitLongShortTermMemory(
     batch_size=64,
     n_epochs=100,
     attenuated_padding_value=1,
-    X_test=None,
-    y_test=None
+    test=None
 ):
     try:
         # convert json data to dataframe
-        X_train = pd.DataFrame(json.loads(X_train))
-        y_train = pd.DataFrame(json.loads(y_train))
-        if X_test and y_test is not None:
-             X_test = pd.DataFrame(json.loads(X_test))
-             y_test = pd.DataFrame(json.loads(y_test))
+        train = pd.DataFrame(json.loads(train))
+        if test is not None:
+             test = pd.DataFrame(json.loads(test))
         else:
-            X_test = pd.DataFrame()
-            y_test = pd.DataFrame()
-
+            test = pd.DataFrame()
         # FTP implementation
         # concat train and test sets
-        train = pd.concat([X_train, y_train], axis=1)
         features_and_targets = features + targets
         train = train.reset_index()[features_and_targets]
         print(train.head())
-        if not (X_test.empty and y_test.empty):
-            test = pd.concat([X_test, y_test], axis=1)
+        if not test.empty:
             test = test.reset_index()[features_and_targets]
             print(test.head())
         #call the FTP bot
@@ -96,10 +88,12 @@ def resolve_fitLongShortTermMemory(
             columns = ftp_response_test['data']['featuresTargetsPretreatment']['columns'],
             index = ftp_response_test['data']['featuresTargetsPretreatment']['index'],
         )
-
         print(test.head())
-
-        sys.exit()
+        # Create X_train, y_train, X_test, y_test
+        X_train = train[features].to_numpy('float64')
+        y_train = train[targets].to_numpy('float64')
+        X_test = test[features].to_numpy('float64')
+        y_test = test[targets].to_numpy('float64')
         # create sequental data
         X_train, y_train = building_data_sequences(X_train, y_train, timesteps)
         X_test, y_test = building_data_sequences(X_test, y_test, timesteps)
