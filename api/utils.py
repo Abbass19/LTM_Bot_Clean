@@ -5,7 +5,7 @@ import requests
 import tensorflow as tf
 from tensorflow.keras.layers import Dense, LSTM 
 
-from .settings import FTP_HOST
+from .settings import FTP_HOST,TPT_HOST
 
 def building_data_sequences(data_X, data_Y, timesteps):
     #generate data sequence with timesteps
@@ -84,3 +84,24 @@ def execute_FTP(values,index,columns,pretreatment_attrs=None):
 
     ftp_response = make_query(query=query,endpoint=FTP_HOST)
     return ftp_response
+
+def execute_TPT(values, index, columns, pretreatment_attrs=None):
+    pretreatment_attrs = json.dumps(pretreatment_attrs)
+    query = f"""
+        query {{
+            targetsPostTreatment(
+                values: {values}, 
+                index: {index},
+                columns: {columns},
+                pretreatment_attrs: {pretreatment_attrs}) {{
+                    success,
+                    error,
+                    postreated_values,
+                    index,
+                    columns
+                }}
+        }}
+    """
+
+    tpt_response = make_query(query=query,endpoint=TPT_HOST).json()
+    return tpt_response
