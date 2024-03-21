@@ -1,8 +1,11 @@
 import numpy as np
+import json
+import requests
 
 import tensorflow as tf
 from tensorflow.keras.layers import Dense, LSTM 
 
+from .settings import FTP_HOST
 
 def building_data_sequences(data_X, data_Y, timesteps):
     #generate data sequence with timesteps
@@ -47,3 +50,37 @@ def compile_model(input_shape, iteration, model_case_version_main_target_code, o
     model.compile(optimizer = optimizer, loss = custom_loss_function(attenuated_padding_value))
 
     return model
+
+def make_query(query,endpoint):
+  headers = {
+      'Accept-Encoding': 'gzip, deflate, br',
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Connection': 'keep-alive',
+      'DNT': '1'
+  }
+
+  response = requests.post(endpoint,json={"query":query},headers=headers)
+  return response
+
+def execute_FTP(values,index,columns,pretreatment_attrs=None):
+    pretreatment_attrs = json.dumps(pretreatment_attrs)
+    query = f"""
+        query {{
+            featuresTargetsPretreatment(
+                values: {values}, 
+                index: {index},
+                columns: {columns},
+                pretreatment_attrs: {pretreatment_attrs}) {{
+                    success,
+                    error,
+                    pretreated_values
+                    index,
+                    columns,
+                    pretreatment_info
+                }}
+        }}
+    """
+
+    ftp_response = make_query(query=query,endpoint=FTP_HOST)
+    return ftp_response

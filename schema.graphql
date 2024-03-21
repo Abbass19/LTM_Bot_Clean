@@ -8,8 +8,8 @@ type Query {
     fitLongShortTermMemory(
       X_train: JSON!
       y_train: JSON!
-      X_test: JSON!
-      y_test: JSON!
+      X_test: JSON
+      y_test: JSON
       predict: Boolean!
       timesteps: Int!
       apply_hyperparameter_tuning: Boolean!
@@ -20,6 +20,8 @@ type Query {
       batch_size: Int
       n_epochs: Int
       attenuated_padding_value: Int
+      features: [String!]!
+      targets: [String!]!
     ): fitLongShortTermMemoryResult!
 
     consumeLongShortTermMemory(

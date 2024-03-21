@@ -11,6 +11,8 @@ from keras.optimizers import Adam
 from api import settings
 from api.utils import *
 
+pd.options.display.max_columns = None
+
 
 def resolve_fitLongShortTermMemory(
     obj,
@@ -23,6 +25,8 @@ def resolve_fitLongShortTermMemory(
     model_case_version_main_target_code,
     iteration,
     model_name,
+    features,
+    targets,
     learning_rate=0.0005,
     batch_size=64,
     n_epochs=100,
@@ -44,9 +48,57 @@ def resolve_fitLongShortTermMemory(
         # FTP implementation
         # concat train and test sets
         train = pd.concat([X_train, y_train], axis=1)
+        features_and_targets = features + targets
+        train = train.reset_index()[features_and_targets]
+        print(train.head())
         if not (X_test.empty and y_test.empty):
             test = pd.concat([X_test, y_test], axis=1)
+            test = test.reset_index()[features_and_targets]
+            print(test.head())
         #call the FTP bot
+        print('\n')
+        print('-' * 25, f'FTP STARTED TO RUN FOR TRAIN SET', 25 * '-', '\n')
+        values = json.dumps(train.values.tolist())
+        index = json.dumps(train.index.to_list())
+        columns = json.dumps(train.columns.to_list())
+
+        ftp_response_train = execute_FTP(values=values,index=index,columns=columns).json()
+        if not ftp_response_train['data']['featuresTargetsPretreatment']['success']:
+            response = {
+                'success':False,
+                'error': ftp_response_train['data']['featuresTargetsPretreatment']['error']
+                }
+            return response
+        pretreatment_object = json.loads(ftp_response_train['data']['featuresTargetsPretreatment']['pretreatment_info'])
+        # exract scaler attributes for each target
+        targets_pretreatment_attrs = {key: pretreatment_object[key] for key in targets if key in pretreatment_object}
+        train = pd.DataFrame(
+                data = ftp_response_train['data']['featuresTargetsPretreatment']['pretreated_values'],
+                columns=ftp_response_train['data']['featuresTargetsPretreatment']['columns'],
+                index=ftp_response_train['data']['featuresTargetsPretreatment']['index']
+            )
+        print(train.head())
+
+        print('-' * 25, f'FTP STARTED TO RUN FOR TEST SET', 25 * '-', '\n')
+        values = json.dumps(test[features_and_targets].values.tolist())
+        index = json.dumps(test.index.to_list())
+        columns = json.dumps(features_and_targets)
+        ftp_response_test = execute_FTP(values, index, columns,json.dumps(pretreatment_object)).json()
+        if not ftp_response_test['data']['featuresTargetsPretreatment']['success']:
+            response = {
+                'success':False,
+                'error': ftp_response_test['data']['featuresTargetsPretreatment']['error']
+                }
+            return response
+        
+        test = pd.DataFrame(
+            data = ftp_response_test['data']['featuresTargetsPretreatment']['pretreated_values'],
+            columns = ftp_response_test['data']['featuresTargetsPretreatment']['columns'],
+            index = ftp_response_test['data']['featuresTargetsPretreatment']['index'],
+        )
+
+        print(test.head())
+
         sys.exit()
         # create sequental data
         X_train, y_train = building_data_sequences(X_train, y_train, timesteps)
