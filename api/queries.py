@@ -137,20 +137,17 @@ def resolve_fitLongShortTermMemory(
         model_path = settings.MODELS / model_name
         #save trained model
         model.save(model_path)
-
     except Exception as error:
         return {
             "success": False,
             "error": error
         }
-
     response = {"success": True,
                  "error": None, 
                  "model_path": json.dumps(str(model_path)),
                 "train_predictions": train_predictions,
                 "test_predictions": test_predictions}
     return response
-
 
 def resolve_consumeLongShortTermMemory(obj, info):
     pass
