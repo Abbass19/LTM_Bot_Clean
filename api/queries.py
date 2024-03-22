@@ -39,8 +39,8 @@ def resolve_fitLongShortTermMemory(
             test = pd.DataFrame(json.loads(test))
         else:
             test = pd.DataFrame()
+            test_predictions = None
         # FTP implementation
-        # concat train and test sets
         features_and_targets = features + targets
         train = train.reset_index()[features_and_targets]
         print(train.head())
@@ -86,44 +86,46 @@ def resolve_fitLongShortTermMemory(
             index=ftp_response_train["data"]["featuresTargetsPretreatment"]["index"],
         )
         print(train.head())
-
-        # if condition must be added here
-        print("-" * 25, f"FTP STARTED TO RUN FOR TEST SET", 25 * "-", "\n")
-        values = json.dumps(test[features_and_targets].values.tolist())
-        index = json.dumps(test.index.to_list())
-        columns = json.dumps(features_and_targets)
-        ftp_response_test = execute_FTP(
-            values, index, columns, json.dumps(pretreatment_object)
-        ).json()
-        if not ftp_response_test["data"]["featuresTargetsPretreatment"]["success"]:
-            response = {
-                "success": False,
-                "error": ftp_response_test["data"]["featuresTargetsPretreatment"][
-                    "error"
-                ],
-            }
-            return response
-
-        test = pd.DataFrame(
-            data=ftp_response_test["data"]["featuresTargetsPretreatment"][
-                "pretreated_values"
-            ],
-            columns=ftp_response_test["data"]["featuresTargetsPretreatment"]["columns"],
-            index=ftp_response_test["data"]["featuresTargetsPretreatment"]["index"],
-        )
-        print(test.head())
-        # Create X_train, y_train, X_test, y_test
+        # Create X_train, y_train
         X_train = train[features].to_numpy("float64")
         y_train = train[targets].to_numpy("float64")
-        X_test = test[features].to_numpy("float64")
-        y_test = test[targets].to_numpy("float64")
         # create sequental data
         X_train, y_train = building_data_sequences(X_train, y_train, timesteps)
-        X_test, y_test = building_data_sequences(X_test, y_test, timesteps)
         print("X_train shape: ", X_train.shape)
         print("y_train shape: ", y_train[0].shape)
-        print("X_test shape: ", X_test.shape)
-        print("y_test shape: ", y_test[0].shape)
+
+        # if condition must be added here
+        if not test.empty:
+            print("-" * 25, f"FTP STARTED TO RUN FOR TEST SET", 25 * "-", "\n")
+            values = json.dumps(test[features_and_targets].values.tolist())
+            index = json.dumps(test.index.to_list())
+            columns = json.dumps(features_and_targets)
+            ftp_response_test = execute_FTP(
+                values, index, columns, json.dumps(pretreatment_object)
+            ).json()
+            if not ftp_response_test["data"]["featuresTargetsPretreatment"]["success"]:
+                response = {
+                    "success": False,
+                    "error": ftp_response_test["data"]["featuresTargetsPretreatment"][
+                        "error"
+                    ],
+                }
+                return response
+
+            test = pd.DataFrame(
+                data=ftp_response_test["data"]["featuresTargetsPretreatment"][
+                    "pretreated_values"
+                ],
+                columns=ftp_response_test["data"]["featuresTargetsPretreatment"]["columns"],
+                index=ftp_response_test["data"]["featuresTargetsPretreatment"]["index"],
+            )
+            print(test.head())
+            X_test = test[features].to_numpy("float64")
+            y_test = test[targets].to_numpy("float64")
+            X_test, y_test = building_data_sequences(X_test, y_test, timesteps)
+            print("X_test shape: ", X_test.shape)
+            print("y_test shape: ", y_test[0].shape)
+        
         # define the input parameters
         input_shape = ((X_train).shape[1], (X_train).shape[2])
         optimizer = Adam(learning_rate=learning_rate)
@@ -139,7 +141,7 @@ def resolve_fitLongShortTermMemory(
         print("\n")
         print("Model summary: \n", model.summary())
         # fit with test data if provided
-        if X_test is not None:
+        if not test.empty:
             history = model.fit(
                 X_train,
                 y_train,
@@ -160,7 +162,7 @@ def resolve_fitLongShortTermMemory(
             train_predictions = model.predict(X_train)
             print("train_predictions", train_predictions.shape)
             # run the test predictions if provided if predict true
-            if X_test is not None:
+            if not test.empty:
                 test_predictions = model.predict(X_test)
                 print("test_predictions", test_predictions.shape)
             else:
@@ -179,29 +181,36 @@ def resolve_fitLongShortTermMemory(
             }
             return response
 
-        train_predictions = tpt_response_train["data"]["targetsPostTreatment"][
+        train_predictions = np.array(tpt_response_train["data"]["targetsPostTreatment"][
             "postreated_values"
-        ]
-        #print(train_predictions[:10])
+        ])
+        print('post treated train predicitons shape: ', train_predictions.shape)
+        train_predictions = [a[:1] for a in train_predictions]
+        train_predictions = np.concatenate(train_predictions).tolist()
+        print('first column train predictions: ', train_predictions[:10])
         # CALL TPT BOT FOR TEST PREDICTIONS
-        tpt_response_test = execute_TPT(
-            values=test_predictions.tolist(),
-            index=np.arange(0, test_predictions.shape[0]).tolist(),
-            columns=json.dumps(targets),
-            pretreatment_attrs=json.dumps(targets_pretreatment_attrs),
-        )
-        if not tpt_response_test["data"]["targetsPostTreatment"]["success"]:
-            response = {
-                "success": False,
-                "error": tpt_response_test["data"]["targetsPostTreatment"]["error"],
-            }
-            return response
-        test_predictions = tpt_response_train["data"]["targetsPostTreatment"][
-            "postreated_values"
-        ]
-        # continue with returning post treated column 0
+        if not test.empty:
+            tpt_response_test = execute_TPT(
+                values=test_predictions.tolist(),
+                index=np.arange(0, test_predictions.shape[0]).tolist(),
+                columns=json.dumps(targets),
+                pretreatment_attrs=json.dumps(targets_pretreatment_attrs),
+            )
+            if not tpt_response_test["data"]["targetsPostTreatment"]["success"]:
+                response = {
+                    "success": False,
+                    "error": tpt_response_test["data"]["targetsPostTreatment"]["error"],
+                }
+                return response
+            test_predictions = np.array(tpt_response_test["data"]["targetsPostTreatment"][
+                "postreated_values"
+            ])
+            print('post treated test predicitons shape: ', test_predictions.shape)
+            # continue with returning post treated first
+            test_predictions = [a[:1] for a in test_predictions]
+            test_predictions = np.concatenate(test_predictions)
+            print('first column test predictions: ', test_predictions[:10])
 
-        sys.exit()
     except Exception as error:
         return {"success": False, "error": error}
 
@@ -209,8 +218,8 @@ def resolve_fitLongShortTermMemory(
         "success": True,
         "error": None,
         "model_path": json.dumps(str(model_path)),
-        "train_predictions": train_predictions.flatten().tolist(),
-        "test_predictions": test_predictions.flatten().tolist(),
+        "train_predictions": train_predictions,
+        "test_predictions": test_predictions
     }
     return response
 
