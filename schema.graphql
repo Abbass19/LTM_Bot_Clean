@@ -14,10 +14,7 @@ type Query {
       model_case_version_main_target_code: Int!
       iteration: Int!
       model_name: String!
-      learning_rate: Float
-      batch_size: Int
-      n_epochs: Int
-      attenuated_padding_value: Int
+      algorithm_configurations: JSON!
       features: [String!]!
       targets: [String!]!
     ): fitLongShortTermMemoryResult!

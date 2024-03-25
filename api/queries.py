@@ -26,13 +26,12 @@ def resolve_fitLongShortTermMemory(
     model_name,
     features,
     targets,
-    learning_rate=0.0005,
-    batch_size=64,
-    n_epochs=100,
-    attenuated_padding_value=1,
+    algorithm_configurations,
     test=None,
 ):
     try:
+        ltm_configurations = json.loads(algorithm_configurations)['LTM']
+
         # convert json data to dataframe
         train = pd.DataFrame(json.loads(train))
         if test is not None:
@@ -128,14 +127,14 @@ def resolve_fitLongShortTermMemory(
         
         # define the input parameters
         input_shape = ((X_train).shape[1], (X_train).shape[2])
-        optimizer = Adam(learning_rate=learning_rate)
+        optimizer = Adam(learning_rate=ltm_configurations['learning_rate'])
         # return the model
         model = compile_model(
             input_shape,
             iteration,
             model_case_version_main_target_code,
             optimizer,
-            attenuated_padding_value,
+            ltm_configurations['attenuated_padding_value']
         )
         print("Input shape: \n", X_train.shape)
         print("\n")
@@ -145,14 +144,14 @@ def resolve_fitLongShortTermMemory(
             history = model.fit(
                 X_train,
                 y_train,
-                batch_size=batch_size,
-                epochs=n_epochs,
+                batch_size=ltm_configurations['batch_size'],
+                epochs=ltm_configurations['n_epochs'],
                 verbose=2,
                 validation_data=(X_test, y_test),
             )
         else:
             history = model.fit(
-                X_train, y_train, batch_size=batch_size, epochs=n_epochs, verbose=2
+                X_train, y_train, batch_size=ltm_configurations['batch_size'], epochs=ltm_configurations['n_epochs'], verbose=2
             )
         model_path = settings.MODELS / model_name
         # save trained model
