@@ -13,6 +13,66 @@ from api.utils import *
 
 pd.options.display.max_columns = None
 
+'''Function for making sequences (blocks) of test and train data'''
+def building_data_sequences(data_X,data_Y, timesteps): #timesteps means how many days we consider for each block
+
+    X=[]
+    y_MPNxP = []
+    for i in range(len(data_X)-timesteps+1):  #how it works: every timesteps (e.g. 10 days) a block is constituted and for each block data and true values are stored
+        X.append(data_X[i:(i+timesteps),:])
+        y_MPNxP.append(data_Y[i+timesteps-1])
+    return np.array(X), np.array(y_MPNxP)
+
+def resolve_trainLTM(
+    obj,
+    info,
+    X_train,
+    y_train,
+    X_test,
+    y_test,
+    predict,
+    timesteps,
+    model_case_version_main_target_code,
+    algorithm_configurations
+):
+    try:
+        print('predict', predict)
+        print('model_case_version_main_target_code', model_case_version_main_target_code)
+        print('algorithm_configurations',algorithm_configurations)
+
+        X_train = pd.DataFrame(json.loads(X_train)).to_numpy(dtype='float64')
+        y_train = pd.DataFrame(json.loads(y_train)).to_numpy(dtype='float64')
+        X_test = pd.DataFrame(json.loads(X_test)).to_numpy(dtype='float64')
+        y_test = pd.DataFrame(json.loads(y_test)).to_numpy(dtype='float64')
+
+        print('X_train shape: ', X_train.shape)
+        print('y_train shape:', y_train.shape)
+        print('X_test shape: ', X_train.shape)
+        print('y_test shape:', y_train.shape)
+        print('\n')
+        
+        X_train, y_train = building_data_sequences(X_train, y_train,timesteps)
+        X_test,y_test = building_data_sequences(X_test,y_test,timesteps)
+        print("-" * 25, f"SEQUENTIAL DATA SHAPES", 25 * "-", "\n")
+        print('X_train shape: ', X_train.shape)
+        print('y_train shape:', y_train.shape)
+        print('X_test shape: ', X_train.shape)
+        print('y_test shape:', y_train.shape)
+
+        print("-" * 25, f"LTM PARAMETERS", 25 * "-", "\n")
+        print(algorithm_configurations)
+
+    except Exception as error:
+        response = {"success": False, "error": error}
+        return response
+
+    response = {
+        "success": True,
+        "error": None
+    }
+
+    return response
+
 
 def resolve_fitLongShortTermMemory(
     obj,

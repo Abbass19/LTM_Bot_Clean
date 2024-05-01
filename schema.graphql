@@ -5,6 +5,17 @@ schema {
 scalar JSON
 
 type Query {
+    trainLTM(
+      X_train: JSON!
+      y_train: JSON!
+      X_test: JSON!
+      y_test: JSON!
+      predict: Boolean
+      timesteps: Int
+      model_case_version_main_target_code: Int
+      algorithm_configurations: JSON
+    ): trainLTMResult
+
     fitLongShortTermMemory(
       train: JSON!
       test: JSON
@@ -24,6 +35,11 @@ type Query {
       timesteps: Int!
       model_path: String!
     ):consumeLongShortTermMemoryResult
+}
+
+type trainLTMResult {
+    success: Boolean!,
+    error: String,
 }
 
 type fitLongShortTermMemoryResult {
