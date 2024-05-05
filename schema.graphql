@@ -13,7 +13,8 @@ type Query {
       predict: Boolean
       timesteps: Int
       model_case_version_main_target_code: Int
-      algorithm_configurations: JSON
+      algorithm_configurations: JSON,
+      iteration: Int
     ): trainLTMResult
 
     fitLongShortTermMemory(
@@ -40,6 +41,7 @@ type Query {
 type trainLTMResult {
     success: Boolean!,
     error: String,
+    main_target_predictions_train: [Float]
 }
 
 type fitLongShortTermMemoryResult {

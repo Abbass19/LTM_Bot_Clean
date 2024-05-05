@@ -23,6 +23,46 @@ def building_data_sequences(data_X,data_Y, timesteps): #timesteps means how many
         y_MPNxP.append(data_Y[i+timesteps-1])
     return np.array(X), np.array(y_MPNxP)
 
+def compile_model(
+        twoexp_nodes_number_layer_1,
+        twoexp_nodes_number_layer_2,
+        twoexp_nodes_number_layer_3,
+        twoexp_nodes_number_layer_4,
+        twoexp_nodes_number_layer_5,
+        attenuated_padding_value,
+        optimizer,
+        model_case_version_main_target_code,
+        input_shape,
+        iteration=1,
+        *args,
+        **kwargs
+):
+    tf.keras.backend.clear_session()
+    model=tf.keras.Sequential()
+    '''The layers of the model (see case_version_cat Tab)'''
+    model.add(LSTM(2**twoexp_nodes_number_layer_1,input_shape=input_shape,return_sequences=True, name=f'prediction_lstm_0_for_iteration_{iteration}'))
+    model.add(LSTM(2**twoexp_nodes_number_layer_2, return_sequences=True,name = f'prediction_lstm_1_for_iteration_{iteration}'))
+    model.add(LSTM(2**twoexp_nodes_number_layer_3,name = f'prediction_lstm_2_for_iteration_{iteration}'))
+    model.add(Dense(2**twoexp_nodes_number_layer_4, name = f'prediction_dense_0_for_iteration_{iteration}'))
+    model.add(Dense(int(model_case_version_main_target_code)+1, name = f'prediction_dense_1_for_iteration_{iteration}'))
+
+    model.compile(optimizer = optimizer, loss = custom_loss_function(attenuated_padding_value))
+
+    return model
+
+def train_predict_save_model(compiled_model,X_train,y_train,X_test,y_test,predict,batch_size, n_epochs, test_mode=False):
+    if not test_mode:
+        compiled_model.fit(
+            X_train,
+            y_train,
+            batch_size = batch_size,
+            epochs = n_epochs,
+            verbose=2,
+            validation_data=(X_test,y_test)
+        )
+    train_predictions = compiled_model.predict(X_train)
+    return train_predictions
+
 def resolve_trainLTM(
     obj,
     info,
@@ -33,7 +73,8 @@ def resolve_trainLTM(
     predict,
     timesteps,
     model_case_version_main_target_code,
-    algorithm_configurations
+    algorithm_configurations,
+    iteration
 ):
     try:
         print('predict', predict)
@@ -50,7 +91,7 @@ def resolve_trainLTM(
         print('X_test shape: ', X_train.shape)
         print('y_test shape:', y_train.shape)
         print('\n')
-        
+
         X_train, y_train = building_data_sequences(X_train, y_train,timesteps)
         X_test,y_test = building_data_sequences(X_test,y_test,timesteps)
         print("-" * 25, f"SEQUENTIAL DATA SHAPES", 25 * "-", "\n")
@@ -58,9 +99,34 @@ def resolve_trainLTM(
         print('y_train shape:', y_train.shape)
         print('X_test shape: ', X_train.shape)
         print('y_test shape:', y_train.shape)
+        input_shape = ((X_train).shape[1], (X_train).shape[2])
 
-        print("-" * 25, f"LTM PARAMETERS", 25 * "-", "\n")
+        print("-" * 25, f"COMPILE LTM WITH ITS PARAMETERS", 25 * "-", "\n")
+        algorithm_configurations = json.loads(algorithm_configurations)
         print(algorithm_configurations)
+        ### Compile LSTM Model
+        ltm_model = compile_model(
+            model_case_version_main_target_code=model_case_version_main_target_code,
+            input_shape=input_shape,
+            **algorithm_configurations["compile_parameters"],
+        )
+        if iteration == 0:
+            print(ltm_model.summary())
+
+        print("-" * 25, f"TRAINING... ITERATION:{iteration}", 25 * "-", "\n")
+        train_predictions = train_predict_save_model(
+            compiled_model=ltm_model,
+            X_train = X_train,
+            y_train = y_train,
+            X_test=X_test,
+            y_test=y_test,
+            predict = predict,
+            test_mode = True,
+            **algorithm_configurations['fit_parameters']
+        )
+        main_target_predictions_train = np.concatenate([a[:1] for a in train_predictions])
+        main_target_predictions_train = main_target_predictions_train.tolist()
+        #print('train_predictions: ',train_predictions)
 
     except Exception as error:
         response = {"success": False, "error": error}
@@ -68,7 +134,8 @@ def resolve_trainLTM(
 
     response = {
         "success": True,
-        "error": None
+        "error": None,
+        "main_target_predictions_train":main_target_predictions_train
     }
 
     return response
