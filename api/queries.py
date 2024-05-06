@@ -50,7 +50,7 @@ def compile_model(
 
     return model
 
-def train_predict_save_model(compiled_model,X_train,y_train,X_test,y_test,predict,batch_size, n_epochs, test_mode=False):
+def train_predict_save_model(compiled_model,X_train,y_train,X_test,y_test,predict,batch_size, n_epochs, test_mode=False,save_model=True):
     if not test_mode:
         compiled_model.fit(
             X_train,
@@ -60,7 +60,14 @@ def train_predict_save_model(compiled_model,X_train,y_train,X_test,y_test,predic
             verbose=2,
             validation_data=(X_test,y_test)
         )
+    if save_model:
+        compiled_model.save(settings.MODELS / 'lstm_test_model.h5')
     train_predictions = compiled_model.predict(X_train)
+    return train_predictions
+
+def load_model_and_predict(model_path, X_train, X_test):
+    model = load_model(model_path, compile=False)
+    train_predictions = model.predict(X_train)
     return train_predictions
 
 def resolve_trainLTM(
@@ -77,21 +84,18 @@ def resolve_trainLTM(
     iteration
 ):
     try:
-        print('predict', predict)
-        print('model_case_version_main_target_code', model_case_version_main_target_code)
-        print('algorithm_configurations',algorithm_configurations)
-
+        # print('predict', predict)
+        # print('model_case_version_main_target_code', model_case_version_main_target_code)
+        # print('algorithm_configurations',algorithm_configurations)
         X_train = pd.DataFrame(json.loads(X_train)).to_numpy(dtype='float64')
         y_train = pd.DataFrame(json.loads(y_train)).to_numpy(dtype='float64')
         X_test = pd.DataFrame(json.loads(X_test)).to_numpy(dtype='float64')
         y_test = pd.DataFrame(json.loads(y_test)).to_numpy(dtype='float64')
-
-        print('X_train shape: ', X_train.shape)
-        print('y_train shape:', y_train.shape)
-        print('X_test shape: ', X_train.shape)
-        print('y_test shape:', y_train.shape)
-        print('\n')
-
+        # print('X_train shape: ', X_train.shape)
+        # print('y_train shape:', y_train.shape)
+        # print('X_test shape: ', X_train.shape)
+        # print('y_test shape:', y_train.shape)
+        # print('\n')
         X_train, y_train = building_data_sequences(X_train, y_train,timesteps)
         X_test,y_test = building_data_sequences(X_test,y_test,timesteps)
         print("-" * 25, f"SEQUENTIAL DATA SHAPES", 25 * "-", "\n")
@@ -100,32 +104,37 @@ def resolve_trainLTM(
         print('X_test shape: ', X_train.shape)
         print('y_test shape:', y_train.shape)
         input_shape = ((X_train).shape[1], (X_train).shape[2])
-
-        print("-" * 25, f"COMPILE LTM WITH ITS PARAMETERS", 25 * "-", "\n")
-        algorithm_configurations = json.loads(algorithm_configurations)
-        print(algorithm_configurations)
-        ### Compile LSTM Model
-        ltm_model = compile_model(
-            model_case_version_main_target_code=model_case_version_main_target_code,
-            input_shape=input_shape,
-            **algorithm_configurations["compile_parameters"],
-        )
-        if iteration == 0:
-            print(ltm_model.summary())
-
-        print("-" * 25, f"TRAINING... ITERATION:{iteration}", 25 * "-", "\n")
-        train_predictions = train_predict_save_model(
-            compiled_model=ltm_model,
-            X_train = X_train,
-            y_train = y_train,
-            X_test=X_test,
-            y_test=y_test,
-            predict = predict,
-            test_mode = True,
-            **algorithm_configurations['fit_parameters']
-        )
-        main_target_predictions_train = np.concatenate([a[:1] for a in train_predictions])
-        main_target_predictions_train = main_target_predictions_train.tolist()
+        use_pretrained_model = True
+        if use_pretrained_model:
+            train_predictions = load_model_and_predict(settings.MODELS / 'lstm_test_model.h5', X_train,X_test)
+            main_target_predictions_train = np.concatenate([a[:1] for a in train_predictions])
+            main_target_predictions_train = main_target_predictions_train.tolist()
+        else:
+            print("-" * 25, f"COMPILE LTM WITH ITS PARAMETERS", 25 * "-", "\n")
+            algorithm_configurations = json.loads(algorithm_configurations)
+            print(algorithm_configurations)
+            ### Compile LSTM Model
+            ltm_model = compile_model(
+                model_case_version_main_target_code=model_case_version_main_target_code,
+                input_shape=input_shape,
+                **algorithm_configurations["compile_parameters"],
+            )
+            if iteration == 0:
+                print(ltm_model.summary())
+            print("-" * 25, f"TRAINING... ITERATION:{iteration}", 25 * "-", "\n")
+            train_predictions = train_predict_save_model(
+                compiled_model=ltm_model,
+                X_train = X_train,
+                y_train = y_train,
+                X_test=X_test,
+                y_test=y_test,
+                predict = predict,
+                test_mode = True,
+                save_model=True,
+                **algorithm_configurations['fit_parameters']
+            )
+            main_target_predictions_train = np.concatenate([a[:1] for a in train_predictions])
+            main_target_predictions_train = main_target_predictions_train.tolist()
         #print('train_predictions: ',train_predictions)
 
     except Exception as error:
