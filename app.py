@@ -3,7 +3,7 @@ from flask import request,jsonify,Flask
 import json
 
 from api import settings
-from api.queries import resolve_fitLongShortTermMemory, resolve_consumeLongShortTermMemory,resolve_trainLTM
+from api.queries import resolve_trainLTM
 
 json_scalar = ScalarType('JSON')
 @json_scalar.serializer
@@ -27,8 +27,6 @@ def parse_json_literal(ast):
 app = Flask(__name__)
 query = ObjectType("Query")
 query.set_field("trainLTM",resolve_trainLTM)
-query.set_field("fitLongShortTermMemory", resolve_fitLongShortTermMemory)
-query.set_field("consumeLongShortTermMemory", resolve_consumeLongShortTermMemory)
 
 type_defs = load_schema_from_path(settings.GRAPHQL_SCHEMA)
 schema = make_executable_schema(

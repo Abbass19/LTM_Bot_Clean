@@ -1,2 +1,2 @@
 from . import settings
-from .queries import resolve_fitLongShortTermMemory, resolve_consumeLongShortTermMemory
+from .queries import resolve_trainLTM

@@ -9,8 +9,7 @@ GRAPHQL_SCHEMA = ROOT / 'schema.graphql'
 SERVER_HOST = '0.0.0.0'
 SERVER_PORT = 4000
 
-FTP_HOST = 'http://172.31.16.204:8000/graphql'
-TPT_HOST = 'http://172.31.16.204:6002/graphql'
+TPT_HOST = 'http://0.0.0.0:6667/graphql'
 
 HEADERS = {
             'Accept-Encoding': 'gzip, deflate, br',

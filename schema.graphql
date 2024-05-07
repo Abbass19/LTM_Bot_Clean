@@ -14,46 +14,14 @@ type Query {
       timesteps: Int
       model_case_version_main_target_code: Int
       algorithm_configurations: JSON,
-      iteration: Int
+      iteration: Int,
+      pretreatment_attrs: JSON
     ): trainLTMResult
-
-    fitLongShortTermMemory(
-      train: JSON!
-      test: JSON
-      predict: Boolean!
-      timesteps: Int!
-      apply_hyperparameter_tuning: Boolean!
-      model_case_version_main_target_code: Int!
-      iteration: Int!
-      model_name: String!
-      algorithm_configurations: JSON!
-      features: [String!]!
-      targets: [String!]!
-    ): fitLongShortTermMemoryResult!
-
-    consumeLongShortTermMemory(
-      X_test: [[Float]]!
-      timesteps: Int!
-      model_path: String!
-    ):consumeLongShortTermMemoryResult
 }
 
 type trainLTMResult {
     success: Boolean!,
     error: String,
-    main_target_predictions_train: [Float]
-}
-
-type fitLongShortTermMemoryResult {
-    success: Boolean!,
-    error: String,
-    train_predictions: [Float],
-    test_predictions: [Float],
-    model_path: String
-}
-
-type consumeLongShortTermMemoryResult {
-    success: Boolean!,
-    error: String,
-    predictions: [[Float]]
+    main_target_predictions_train: [[Float]]
+    main_target_columns: [String]
 }
