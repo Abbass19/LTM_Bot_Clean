@@ -47,6 +47,7 @@ def compile_model(
         optimizer,
         model_case_version_main_target_code,
         input_shape,
+        num_targets,
         iteration=1,
         *args,
         **kwargs
@@ -58,7 +59,7 @@ def compile_model(
     model.add(LSTM(2**twoexp_nodes_number_layer_2, return_sequences=True,name = f'prediction_lstm_1_for_iteration_{iteration}'))
     model.add(LSTM(2**twoexp_nodes_number_layer_3,name = f'prediction_lstm_2_for_iteration_{iteration}'))
     model.add(Dense(2**twoexp_nodes_number_layer_4, name = f'prediction_dense_0_for_iteration_{iteration}'))
-    model.add(Dense(int(model_case_version_main_target_code)+1, name = f'prediction_dense_1_for_iteration_{iteration}'))
+    model.add(Dense(num_targets, name = f'prediction_dense_1_for_iteration_{iteration}'))
 
     model.compile(optimizer = optimizer, loss = custom_loss_function(attenuated_padding_value))
 
@@ -71,7 +72,7 @@ def train_and_save_model(compiled_model,X_train,y_train,X_test,y_test,batch_size
             y_train,
             batch_size = batch_size,
             epochs = n_epochs,
-            verbose=2,
+            verbose=1,
             validation_data=(X_test,y_test)
         )
     if save_model:
@@ -145,7 +146,8 @@ def resolve_trainLTM(
         print('X_test shape: ', X_train.shape)
         print('y_test shape:', y_train.shape)
         input_shape = ((X_train).shape[1], (X_train).shape[2])
-        use_pretrained_model = True
+        num_targets = y_train.shape[-1]
+        use_pretrained_model = False
         if use_pretrained_model:
             print("-" * 25, f"LOADING THE MODEL", 25 * "-", "\n")
             trained_model = load_model(settings.MODELS / 'lstm_test_model.h5', compile=False)
@@ -159,6 +161,7 @@ def resolve_trainLTM(
             ltm_model = compile_model(
                 model_case_version_main_target_code=model_case_version_main_target_code,
                 input_shape=input_shape,
+                num_targets = num_targets,
                 **algorithm_configurations["compile_parameters"],
             )
             if iteration == 0:
@@ -170,7 +173,7 @@ def resolve_trainLTM(
                 y_train = y_train,
                 X_test=X_test,
                 y_test=y_test,
-                test_mode = True,
+                test_mode = False,
                 save_model=True,
                 **algorithm_configurations['fit_parameters']
             )
