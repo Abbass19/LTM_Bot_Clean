@@ -1,0 +1,39 @@
+.venv (folder)
+api (folder)
+    __inti__.py
+    queries.py
+    settings.py
+    utils.py
+
+api_old (folder)
+    __init__.py
+    model.py
+    queries.py
+    settings.py
+
+notebooks (folder)
+    0_0_LTM_pretreatment.ipynb
+    0_1_LTM_TSLA_Imb002_model_2020_0.0835_dispersion.ipynb
+    0_2_LTM_CNN_TSLA_lmb002_model_2020.ipynb
+    0_3_LTM_TSLA_lmb002_model_2020_hyperparameter_tuning.ipynb
+    0_4_LTM_TSLA_lmb002_model_2020_hyperparameter_tuning_v2.ipynb
+    0_5_mulit_targets_ohlcm_test.ipynb
+    3d_input_graphql.ipynb
+    LMB_0.03.ipynb
+    lstm.ipynb
+    naive_forecast.ipynb
+
+test (folder)
+    0_7_LTM_TSLA_lmb002_model_2020_hyperparameter_tuning_test.ipynb
+    call_LTM.ipynb
+    data_extractor_test.ipynb
+    pretreatment_attrs.json
+    X_test.csv
+    X_train.csv
+    y_test.csv
+    y_train.csv
+
+app.py
+run_ltm_bot.py
+schema.graphql
+

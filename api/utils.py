@@ -17,7 +17,6 @@ def building_data_sequences(data_X, data_Y, timesteps):
         y_MPNxP.append(target)
     return np.array(X), [np.array(y_MPNxP)]
 
-
 def custom_loss_function(attenuated_padding_value):
 
   def padding_loss_function(y_true, y_pred):
@@ -29,7 +28,6 @@ def custom_loss_function(attenuated_padding_value):
     return tf.reduce_mean(squared_difference, axis=-1) #mse
 
   return padding_loss_function
-
 
 def compile_model(input_shape, iteration, model_case_version_main_target_code, optimizer, attenuated_padding_value):
     twoexp_nodes_number_layer_1 = 7
